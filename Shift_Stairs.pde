@@ -10,12 +10,22 @@ const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be
 #include <ShiftPWM.h>   // include ShiftPWM.h after setting the pins!
 
 const int SWITCH_PIN = A0;
+const int MOTION_SENSOR_TOP_PIN = 2;
+const int MOTION_SENSOR_BOTTOM_PIN = 3;
 
 const unsigned char maxBrightness = 255;
 const unsigned char pwmFrequency = 75;
 const int numRegisters = 2;
 const int numLEDs = 12;
-const int DELAYMICROS_STEP_LIGHT = 700;
+const int DELAYMICROS_STEP_LIGHT = 400;
+const int MOTION_SENSOR_WARMUP_TIME = 0;
+//const int MIN_TIME_BETWEEN_INTERRUPTS = 1000;
+const int ON_TIME = 30000; /* The duration between turn on and turn off. */
+
+volatile boolean topActivated = false;
+volatile boolean bottomActivated = false; 
+//volatile unsigned long topActivatedTime = 0;
+//volatile unsigned long bottomActivatedTime = 0; 
 
 void setup()   {                
     pinMode(ShiftPWM_latchPin, OUTPUT);  
@@ -29,6 +39,10 @@ void setup()   {
     
     /* Turn on pullup resistor for switch */
     digitalWrite(SWITCH_PIN, HIGH);
+    
+    /* Attach interrupt to top and bottom motion sensors. */
+    attachInterrupt(0, topISR, RISING);
+    attachInterrupt(1, bottomISR, RISING);
     
     ShiftPWM.SetAmountOfRegisters(numRegisters);
     ShiftPWM.Start(pwmFrequency,maxBrightness);  
@@ -49,10 +63,18 @@ void setup()   {
 void loop()
 {    
     if(switchPressed() == false){
-        increment(0, 0);
-    }
-    if(switchPressed() == false){
-        increment(0, 1);
+        if(topActivated){
+            increment(0, 0);
+            delayWithOverride();
+            increment(0, 1);
+        } else if(bottomActivated){
+            increment(1, 0);
+            delayWithOverride();
+            increment(1, 1);
+        }
+        
+        topActivated = false;
+        bottomActivated = false;
     }
     
     if(switchPressed()){
@@ -112,4 +134,31 @@ void override(){
     while(switchPressed()){
     }
     ShiftPWM.SetAll(0);
+    topActivated = false;
+    bottomActivated = false;
+}
+/**
+    This is just a delay that stops if the switch is pressed. 
+*/
+void delayWithOverride(){
+    for(int n = 0; n < ON_TIME / 10; n++){
+        delay(10);
+        
+        if(switchPressed()){
+            break;
+        }
+    }
+}
+void topISR(){
+    if(millis() > MOTION_SENSOR_WARMUP_TIME && topActivated == false){
+        Serial.println("Top activated");
+        topActivated = true;
+//        topActivatedTime = millis();
+    }
+}
+void bottomISR(){
+    if(millis() > MOTION_SENSOR_WARMUP_TIME && bottomActivated == false){
+        bottomActivated = true;
+//        bottomActivatedTime = millis();
+    }
 }
