@@ -9,6 +9,7 @@ const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be
 
 #include <ShiftPWM.h>   // include ShiftPWM.h after setting the pins!
 
+const int SWITCH_PIN = A0;
 
 const unsigned char maxBrightness = 255;
 const unsigned char pwmFrequency = 75;
@@ -25,11 +26,12 @@ void setup()   {
     SPI.begin(); 
   
     Serial.begin(9600);
-  
-  
+    
+    /* Turn on pullup resistor for switch */
+    digitalWrite(SWITCH_PIN, HIGH);
+    
     ShiftPWM.SetAmountOfRegisters(numRegisters);
     ShiftPWM.Start(pwmFrequency,maxBrightness);  
-    
     // Print information about the interrupt frequency, duration and load on your program
     ShiftPWM.SetAll(0);
     ShiftPWM.PrintInterruptLoad();
@@ -46,27 +48,16 @@ void setup()   {
 }
 void loop()
 {    
-//    // Fade in and out 2 outputs at a time
-//    for(int output=0;output<numRegisters*8-1;output++){
-//        ShiftPWM.SetAll(0);
-//        for(int brightness=0;brightness<maxBrightness;brightness++){
-//            ShiftPWM.SetOne(output+1,brightness);
-//            ShiftPWM.SetOne(output,maxBrightness-brightness);
-//            delay(1);
-//        }
-//    }
-
-//    delay(10000);
-    increment(0, 0);
-    delay(4000);
-
-//    ShiftPWM.SetAll(0);
+    if(switchPressed() == false){
+        increment(0, 0);
+    }
+    if(switchPressed() == false){
+        increment(0, 1);
+    }
     
-    increment(0, 1);
-    delay(200);
-//    ShiftPWM.SetAll(0);
-    delay(1000);
-//    while(true){}
+    if(switchPressed()){
+        override();
+    }
 }
 /**
     Turns on/off the LEDs by fading them in/out.
@@ -86,6 +77,10 @@ void increment(boolean descending, boolean onOff){
                 ShiftPWM.SetOne(abs(i), brightness);
                 brightness++;
                 delayMicroseconds(DELAYMICROS_STEP_LIGHT);
+                
+                if(switchPressed()){
+                    return;
+                }
     	    }
         } 
         else if(onOff == 1){
@@ -94,8 +89,27 @@ void increment(boolean descending, boolean onOff){
                 ShiftPWM.SetOne(abs(i), brightness);
                 brightness--;
                 delayMicroseconds(DELAYMICROS_STEP_LIGHT);
+                
+                if(switchPressed()){
+                    return;
+                }
     	    }
         }
     }
 }
-
+/** 
+    Returns true if switch is in "1" position. 
+*/
+boolean switchPressed(){
+    return !digitalRead(SWITCH_PIN);
+}
+/**
+    Keep lights on until switch is not pressed anymore. This cannot be an ISR because
+    ShiftPWM relies on interrupts. Also tried using "shiftout" method but it did not work. 
+*/
+void override(){
+    ShiftPWM.SetAll(maxBrightness);
+    while(switchPressed()){
+    }
+    ShiftPWM.SetAll(0);
+}
