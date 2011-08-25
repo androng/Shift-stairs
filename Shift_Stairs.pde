@@ -10,6 +10,7 @@ const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be
 #include <ShiftPWM.h>   // include ShiftPWM.h after setting the pins!
 
 const int SWITCH_PIN = A0;
+const int PHOTORESISTOR_PIN = A2;
 const int MOTION_SENSOR_TOP_PIN = 2;
 const int MOTION_SENSOR_BOTTOM_PIN = 3;
 
@@ -21,6 +22,7 @@ const int DELAYMICROS_STEP_LIGHT = 400;
 const int MOTION_SENSOR_WARMUP_TIME = 0;
 //const int MIN_TIME_BETWEEN_INTERRUPTS = 1000;
 const int ON_TIME = 30000; /* The duration between turn on and turn off. */
+const int LIGHT_THRESHOLD = 150; /* Anything below this sensor value will disable lights except override switch. */
 
 volatile boolean topActivated = false;
 volatile boolean bottomActivated = false; 
@@ -63,18 +65,22 @@ void setup()   {
 void loop()
 {    
     if(switchPressed() == false){
-        if(topActivated){
-            increment(0, 0);
-            delayWithOverride();
-            increment(0, 1);
-        } else if(bottomActivated){
-            increment(1, 0);
-            delayWithOverride();
-            increment(1, 1);
+        if(analogRead(PHOTORESISTOR_PIN) > LIGHT_THRESHOLD){
+            if(topActivated){
+                increment(0, 0);
+                delayWithOverride();
+                increment(0, 1);
+            } else if(bottomActivated){
+                increment(1, 0);
+                delayWithOverride();
+                increment(1, 1);
+            }
+              
+            topActivated = false;
+            bottomActivated = false;
         }
         
-        topActivated = false;
-        bottomActivated = false;
+        
     }
     
     if(switchPressed()){
@@ -151,7 +157,8 @@ void delayWithOverride(){
 }
 void topISR(){
     if(millis() > MOTION_SENSOR_WARMUP_TIME && topActivated == false){
-        Serial.println("Top activated");
+        Serial.print("Top activated ");
+        Serial.println(millis());
         topActivated = true;
 //        topActivatedTime = millis();
     }
