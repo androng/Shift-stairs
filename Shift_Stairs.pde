@@ -19,10 +19,10 @@ const unsigned char pwmFrequency = 75;
 const int numRegisters = 2;
 const int numLEDs = 12;
 const int DELAYMICROS_STEP_LIGHT = 400;
-const int MOTION_SENSOR_WARMUP_TIME = 0;
+const int MOTION_SENSOR_WARMUP_TIME = 10;
 //const int MIN_TIME_BETWEEN_INTERRUPTS = 1000;
 const int ON_TIME = 30000; /* The duration between turn on and turn off. */
-const int LIGHT_THRESHOLD = 150; /* Anything below this sensor value will disable lights except override switch. */
+const int LIGHT_THRESHOLD = 300; /* Anything below this sensor value will disable lights except override switch. */
 
 volatile boolean topActivated = false;
 volatile boolean bottomActivated = false; 
