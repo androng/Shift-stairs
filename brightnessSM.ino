@@ -73,7 +73,6 @@ void brightnessSM(){
     case sFullyOn:
         if(millis() - lastMotionTime > ON_TIME){
             brightnessState = sTurningOff;
-//            Serial.println(brightnessState);
         }
         if(switchPressed()){
             transitionToOverrideSwitch();
@@ -103,7 +102,6 @@ void brightnessSM(){
         }
         if(allOn){
             brightnessState = sFullyOn;
-//            Serial.println(brightnessState);
         }
         if(switchPressed()){
             transitionToOverrideSwitch();
@@ -122,7 +120,6 @@ void brightnessSM(){
         if(allOff){
             directionTriggered = 0;
             brightnessState = sOff;
-//            Serial.println(brightnessState);
         }
         if(switchPressed()){
             transitionToOverrideSwitch();

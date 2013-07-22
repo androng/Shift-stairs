@@ -1,7 +1,7 @@
 
 #include <math.h>
 #include <SPI.h>
-#include <MemoryFree.h> 
+//#include <MemoryFree.h> 
 //#include "expoDutyCycles.h"
 
 //Data pin is MOSI (atmega168/328: pin 11. Mega: 51) 
@@ -73,10 +73,6 @@ void setup()   {
         ShiftPWM.SetAll(j);  
         delay(3);
     }
-    Serial.println(freeMemory());
-    for(int i = 0; i < 256; i++){
-        Serial.println(expoDutyCycles[i]);
-    }
 }
 void loop()
 {    
@@ -100,7 +96,6 @@ void loop()
         }
         lastMotionTime = millis();
         topActivated = false;
-//    Serial.println((unsigned char)directionTriggered);
     }
     if(bottomActivated){
         if(directionTriggered == 0){
@@ -108,7 +103,6 @@ void loop()
         }
         lastMotionTime = millis();
         bottomActivated = false;
-//    Serial.println((unsigned char)directionTriggered);
     }
     
     /* State machine */
