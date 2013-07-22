@@ -1,10 +1,12 @@
 
 #include <math.h>
 #include <SPI.h>
+#include <MemoryFree.h> 
+//#include "expoDutyCycles.h"
 
 //Data pin is MOSI (atmega168/328: pin 11. Mega: 51) 
 //Clock pin is SCK (atmega168/328: pin 13. Mega: 52)
-const int ShiftPWM_latchPin=8;
+const int ShiftPWM_latchPin=10;
 const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be active low. Usefull for common anode RGB led's.
 
 #include <ShiftPWM.h>   // include ShiftPWM.h after setting the pins!
@@ -17,17 +19,31 @@ const int MOTION_SENSOR_BOTTOM_PIN = 3;
 const unsigned char maxBrightness = 255;
 const unsigned char pwmFrequency = 75;
 const int numRegisters = 2;
-const int numLEDs = 12;
-const int DELAYMICROS_STEP_LIGHT = 400;
+const int NUMLEDs = 9;
 const int MOTION_SENSOR_WARMUP_TIME = 10;
-//const int MIN_TIME_BETWEEN_INTERRUPTS = 1000;
-const int ON_TIME = 30000; /* The duration between turn on and turn off. */
+const int ON_TIME = 10000; /* The duration between turn on and turn off. */
 const int LIGHT_THRESHOLD = 300; /* Anything below this sensor value will disable lights except override switch. */
 
-volatile boolean topActivated = false;
-volatile boolean bottomActivated = false; 
-//volatile unsigned long topActivatedTime = 0;
-//volatile unsigned long bottomActivatedTime = 0; 
+/* These are used to detect rising edges in the absence of interrupts. 
+   Using interrupts with ShiftPWM crashes the program. */
+unsigned char lastReadTopPin = LOW;
+unsigned char lastReadBotPin = LOW;
+
+volatile unsigned char topActivated = false;
+volatile unsigned char bottomActivated = false; 
+unsigned long lastMotionTime = 0; 
+
+const char BOTTOM_TO_TOP = 1;
+const char TOP_TO_BOTTOM = 2;
+/* For sake of the animation, stores the direction of propegation.
+   Set when animation is active, cleared when animation is done.  */
+char directionTriggered = 0; 
+
+const unsigned long BRIGHTNESS_SM_PERIOD = 2000; /* in μs */
+unsigned long lastBrightnessSM = 0;
+
+/* LED 0 is on the top of stairs */
+unsigned char brightnesses[NUMLEDs] = {0};
 
 void setup()   {                
     pinMode(ShiftPWM_latchPin, OUTPUT);  
@@ -41,10 +57,6 @@ void setup()   {
     
     /* Turn on pullup resistor for switch */
     digitalWrite(SWITCH_PIN, HIGH);
-    
-    /* Attach interrupt to top and bottom motion sensors. */
-    attachInterrupt(0, topISR, RISING);
-    attachInterrupt(1, bottomISR, RISING);
     
     ShiftPWM.SetAmountOfRegisters(numRegisters);
     ShiftPWM.Start(pwmFrequency,maxBrightness);  
@@ -61,68 +73,48 @@ void setup()   {
         ShiftPWM.SetAll(j);  
         delay(3);
     }
+    Serial.println(freeMemory());
+    for(int i = 0; i < 256; i++){
+        Serial.println(expoDutyCycles[i]);
+    }
 }
 void loop()
 {    
-    if(switchPressed() == false){
-        if(analogRead(PHOTORESISTOR_PIN) > LIGHT_THRESHOLD){
-            if(topActivated){
-                increment(0, 0);
-                delayWithOverride();
-                increment(0, 1);
-            } else if(bottomActivated){
-                increment(1, 0);
-                delayWithOverride();
-                increment(1, 1);
-            }
-              
-            topActivated = false;
-            bottomActivated = false;
+    /* Detect rising edge with polling. Interrupts crash the program. */
+    unsigned char pinRead = digitalRead(MOTION_SENSOR_TOP_PIN);
+    if(pinRead == HIGH && lastReadTopPin == LOW){
+        topActivated = true;
+    }
+    lastReadTopPin = pinRead;
+    /* Detect rising edge with polling. Interrupts crash the program. */
+    pinRead = digitalRead(MOTION_SENSOR_BOTTOM_PIN);
+    if(pinRead == HIGH && lastReadBotPin == LOW){
+        bottomActivated = true;
+    }
+    lastReadBotPin = pinRead;
+    
+    /* Resets flags */
+    if(topActivated){
+        if(directionTriggered == 0){
+            directionTriggered = TOP_TO_BOTTOM;
         }
-        
-        
+        lastMotionTime = millis();
+        topActivated = false;
+//    Serial.println((unsigned char)directionTriggered);
+    }
+    if(bottomActivated){
+        if(directionTriggered == 0){
+            directionTriggered = BOTTOM_TO_TOP;
+        }
+        lastMotionTime = millis();
+        bottomActivated = false;
+//    Serial.println((unsigned char)directionTriggered);
     }
     
-    if(switchPressed()){
-        override();
-    }
-}
-/**
-    Turns on/off the LEDs by fading them in/out.
-    @param boolean descending: 0 for ascending and 1 for descending.
-    @param boolean onOff: 0 for on and 1 for off.
-*/
-void increment(boolean descending, boolean onOff){
-    
-    /* Cycle through each LED. This very messed up for loop is just a clever way of 
-       generating the start and end LEDs for two modes. */
-    for(int i = -1 * descending * (numLEDs - 1) ; i <= abs((descending - 1) * (numLEDs - 1)) ; i++){
-        int brightness;
-        
-        if(onOff == 0){
-            brightness = 0;
-            while(brightness < maxBrightness){
-                ShiftPWM.SetOne(abs(i), brightness);
-                brightness++;
-                delayMicroseconds(DELAYMICROS_STEP_LIGHT);
-                
-                if(switchPressed()){
-                    return;
-                }
-    	    }
-        } 
-        else if(onOff == 1){
-            brightness = maxBrightness;
-            while(brightness >= 0){
-                ShiftPWM.SetOne(abs(i), brightness);
-                brightness--;
-                delayMicroseconds(DELAYMICROS_STEP_LIGHT);
-                
-                if(switchPressed()){
-                    return;
-                }
-    	    }
-        }
+    /* State machine */
+    if(micros() - lastBrightnessSM > BRIGHTNESS_SM_PERIOD){
+        brightnessSM();
+        lastBrightnessSM = micros();
     }
 }
 /** 
@@ -131,41 +123,4 @@ void increment(boolean descending, boolean onOff){
 boolean switchPressed(){
     return !digitalRead(SWITCH_PIN);
 }
-/**
-    Keep lights on until switch is not pressed anymore. This cannot be an ISR because
-    ShiftPWM relies on interrupts. Also tried using "shiftout" method but it did not work. 
-*/
-void override(){
-    ShiftPWM.SetAll(maxBrightness);
-    while(switchPressed()){
-    }
-    ShiftPWM.SetAll(0);
-    topActivated = false;
-    bottomActivated = false;
-}
-/**
-    This is just a delay that stops if the switch is pressed. 
-*/
-void delayWithOverride(){
-    for(int n = 0; n < ON_TIME / 10; n++){
-        delay(10);
-        
-        if(switchPressed()){
-            break;
-        }
-    }
-}
-void topISR(){
-    if(millis() > MOTION_SENSOR_WARMUP_TIME && topActivated == false){
-        Serial.print("Top activated ");
-        Serial.println(millis());
-        topActivated = true;
-//        topActivatedTime = millis();
-    }
-}
-void bottomISR(){
-    if(millis() > MOTION_SENSOR_WARMUP_TIME && bottomActivated == false){
-        bottomActivated = true;
-//        bottomActivatedTime = millis();
-    }
-}
+
