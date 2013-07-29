@@ -4,6 +4,8 @@
     from 0-255. Attempts to cancel logarithmic brightness
     perception. 
     
+    Put this in program memory. 
+    
     MATLAB R2012a Code:
     a = [0:255];
     256.^(a/255)-1
