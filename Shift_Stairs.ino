@@ -10,6 +10,7 @@ const int ShiftPWM_latchPin=10;
 const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be active low. Usefull for common anode RGB led's.
 
 #include <ShiftPWM.h>   // include ShiftPWM.h after setting the pins!
+#include "expoDutyCycles.h"
 
 const int SWITCH_PIN = A0;
 const int PHOTORESISTOR_PIN = A2;
@@ -17,12 +18,15 @@ const int MOTION_SENSOR_TOP_PIN = 2;
 const int MOTION_SENSOR_BOTTOM_PIN = 3;
 
 const unsigned char maxBrightness = 255;
+const unsigned short MAX_BANISTER_BRIGHTNESS = 765;
 const unsigned char pwmFrequency = 75;
 const int numRegisters = 2;
 const int NUMLEDs = 9;
 const int MOTION_SENSOR_WARMUP_TIME = 10;
 const int ON_TIME = 10000; /* The duration between turn on and turn off. */
 const int LIGHT_THRESHOLD = 300; /* Anything below this sensor value will disable lights except override switch. */
+const unsigned char BANISTER_PIN_1 = 14;
+const unsigned char BANISTER_PIN_2 = 15;
 
 /* These are used to detect rising edges in the absence of interrupts. 
    Using interrupts with ShiftPWM crashes the program. */
@@ -44,6 +48,7 @@ unsigned long lastBrightnessSM = 0;
 
 /* LED 0 is on the top of stairs */
 unsigned char brightnesses[NUMLEDs] = {0};
+short banisterBrightness = 0;
 
 void setup()   {                
     pinMode(ShiftPWM_latchPin, OUTPUT);  

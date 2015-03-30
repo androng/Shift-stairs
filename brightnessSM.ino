@@ -27,6 +27,13 @@ void brightnessSM(){
             if(brightnesses[abs(l)] != maxBrightness){
                 brightnesses[abs(l)] += 5;
                 ShiftPWM.SetOne(abs(l), brightnesses[abs(l)]);
+                
+                if(banisterBrightness < MAX_BANISTER_BRIGHTNESS){
+                    banisterBrightness++;
+                    ShiftPWM.SetOne(BANISTER_PIN_1, expoDutyCycles[banisterBrightness/3]);
+                    ShiftPWM.SetOne(BANISTER_PIN_2, expoDutyCycles[banisterBrightness/3]);
+                }
+                
                 break;
             }
 
@@ -51,8 +58,16 @@ void brightnessSM(){
             if(brightnesses[abs(l)] != 0){
                 brightnesses[abs(l)] -= 5;
                 ShiftPWM.SetOne(abs(l), brightnesses[abs(l)]);
+                
+                if(banisterBrightness > 0){
+                    banisterBrightness--;
+                    ShiftPWM.SetOne(BANISTER_PIN_1, expoDutyCycles[banisterBrightness/3]);
+                    ShiftPWM.SetOne(BANISTER_PIN_2, expoDutyCycles[banisterBrightness/3]);
+                }
+                
                 break;
             }
+            
             
             /* Turn on the next LED only if the one before it is partially on */
 //            if(brightnesses[abs(l)] != 0){ 
