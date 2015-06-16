@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.5.0">
+<eagle version="7.3.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -2662,6 +2662,7 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 <part name="GND28" library="SparkFun" deviceset="GND" device=""/>
 <part name="U$4" library="com.andrew.eagleLibrary" deviceset="12V" device=""/>
 <part name="P+8" library="SparkFun" deviceset="VCC" device=""/>
+<part name="P+9" library="SparkFun" deviceset="VCC" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -2710,7 +2711,7 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 <instance part="GND17" gate="1" x="149.86" y="33.02" rot="R90"/>
 <instance part="GND18" gate="1" x="149.86" y="22.86" rot="R90"/>
 <instance part="GND19" gate="1" x="149.86" y="12.7" rot="R90"/>
-<instance part="GND20" gate="1" x="-7.62" y="55.88" rot="R90"/>
+<instance part="GND20" gate="1" x="7.62" y="53.34"/>
 <instance part="GND21" gate="1" x="-22.86" y="106.68" rot="R90"/>
 <instance part="U$5" gate="G$1" x="-15.24" y="121.92"/>
 <instance part="JP1" gate="G$1" x="-43.18" y="91.44"/>
@@ -2740,7 +2741,7 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 <instance part="U$3" gate="G$1" x="160.02" y="162.56"/>
 <instance part="SWITCH" gate="G$1" x="-33.02" y="71.12"/>
 <instance part="PHOTORES" gate="G$1" x="-33.02" y="55.88"/>
-<instance part="R1" gate="G$1" x="-17.78" y="55.88"/>
+<instance part="R1" gate="G$1" x="0" y="55.88"/>
 <instance part="GND24" gate="1" x="-20.32" y="71.12" rot="R90"/>
 <instance part="MOTION1" gate="G$1" x="-33.02" y="43.18"/>
 <instance part="MOTION2" gate="G$1" x="-33.02" y="27.94"/>
@@ -2756,6 +2757,7 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 <instance part="GND28" gate="1" x="40.64" y="-7.62"/>
 <instance part="U$4" gate="G$1" x="15.24" y="17.78"/>
 <instance part="P+8" gate="1" x="40.64" y="12.7"/>
+<instance part="P+9" gate="1" x="-20.32" y="60.96"/>
 </instances>
 <busses>
 </busses>
@@ -2806,6 +2808,12 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 <pinref part="IC3" gate="G$1" pin="OUT"/>
 <wire x1="40.64" y1="7.62" x2="40.64" y2="5.08" width="0.1524" layer="91"/>
 <wire x1="35.56" y1="7.62" x2="40.64" y2="7.62" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="P+9" gate="1" pin="VCC"/>
+<pinref part="PHOTORES" gate="G$1" pin="2"/>
+<wire x1="-20.32" y1="60.96" x2="-20.32" y2="58.42" width="0.1524" layer="91"/>
+<wire x1="-20.32" y1="58.42" x2="-25.4" y2="58.42" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="GND" class="0">
@@ -2903,7 +2911,7 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 <segment>
 <pinref part="R1" gate="G$1" pin="2"/>
 <pinref part="GND20" gate="1" pin="GND"/>
-<wire x1="-12.7" y1="55.88" x2="-10.16" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="7.62" y1="55.88" x2="5.08" y2="55.88" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="MOTION1" gate="G$1" pin="1"/>
@@ -3378,23 +3386,17 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 <label x="35.56" y="83.82" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="N$22" class="0">
-<segment>
-<pinref part="PHOTORES" gate="G$1" pin="1"/>
-<pinref part="R1" gate="G$1" pin="1"/>
-<wire x1="-25.4" y1="55.88" x2="-22.86" y2="55.88" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="PHOTORESIST_PIN" class="0">
-<segment>
-<pinref part="PHOTORES" gate="G$1" pin="2"/>
-<wire x1="-25.4" y1="58.42" x2="-15.24" y2="58.42" width="0.1524" layer="91"/>
-<label x="-20.32" y="58.42" size="1.778" layer="95"/>
-</segment>
 <segment>
 <pinref part="U$1" gate="G$1" pin="A2"/>
 <wire x1="30.48" y1="88.9" x2="40.64" y2="88.9" width="0.1524" layer="91"/>
 <label x="35.56" y="88.9" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="PHOTORES" gate="G$1" pin="1"/>
+<pinref part="R1" gate="G$1" pin="1"/>
+<wire x1="-25.4" y1="55.88" x2="-5.08" y2="55.88" width="0.1524" layer="91"/>
+<label x="-27.94" y="53.34" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="MOTION1" class="0">
