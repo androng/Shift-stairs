@@ -22,7 +22,7 @@ const int numRegisters = 2;
 const int NUMLEDs = 9;
 const int MOTION_SENSOR_WARMUP_TIME = 10;
 const int ON_TIME = 10000; /* The duration between turn on and turn off. */
-const int LIGHT_THRESHOLD = 300; /* Anything below this sensor value will disable lights except override switch. */
+const int LIGHT_THRESHOLD = 300; /* Anything below this sensor value will enable lights */
 
 /* These are used to detect rising edges in the absence of interrupts. 
    Using interrupts with ShiftPWM crashes the program. */

@@ -80,7 +80,7 @@ void brightnessSM(){
         break;
     case sOff:
         if(directionTriggered != 0){
-            if(analogRead(PHOTORESISTOR_PIN) > LIGHT_THRESHOLD){
+            if(analogRead(PHOTORESISTOR_PIN) < LIGHT_THRESHOLD){
                 brightnessState = sTurningOn;
             } 
             else {
