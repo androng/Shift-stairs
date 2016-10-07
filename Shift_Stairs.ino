@@ -6,15 +6,20 @@
 
 //Data pin is MOSI (atmega168/328: pin 11. Mega: 51) 
 //Clock pin is SCK (atmega168/328: pin 13. Mega: 52)
-const int ShiftPWM_latchPin=10;
+const int ShiftPWM_latchPin=8;
 const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be active low. Usefull for common anode RGB led's.
 
 #include <ShiftPWM.h>   // include ShiftPWM.h after setting the pins!
 
-const int SWITCH_PIN = A0;
-const int PHOTORESISTOR_PIN = A2;
-const int MOTION_SENSOR_TOP_PIN = 2;
-const int MOTION_SENSOR_BOTTOM_PIN = 3;
+const int SWITCH0_PIN = 0;
+const int SWITCH1_PIN = 1;
+const int PHOTORESISTOR_PIN = A5;
+const int MOTION_SENSOR_TOP_PIN = 5;
+const int MOTION_SENSOR_BOTTOM_PIN = 13;
+const int NUM_STAIRS_SWITCH2 = 4;
+/******** NUM_STAIRS_SWITCH0 =  NOT MAPPED in digitalWrite */
+const int NUM_STAIRS_SWITCH3 = 12;
+const int NUM_STAIRS_SWITCH1 = 6;
 
 const unsigned char maxBrightness = 255;
 const unsigned char pwmFrequency = 75;
@@ -55,11 +60,17 @@ void setup()   {
   
     Serial.begin(9600);
     
+   
     /* Turn on pullup resistor for switch */
-    digitalWrite(SWITCH_PIN, HIGH);
-    
+    digitalWrite(SWITCH0_PIN, HIGH);
+    digitalWrite(SWITCH1_PIN, HIGH);
+    PORTD |= (1<<5); /* stupid digitalWrite doesn't have this pin mapped */
+    digitalWrite(NUM_STAIRS_SWITCH1, HIGH);
+    digitalWrite(NUM_STAIRS_SWITCH2, HIGH);
+    digitalWrite(NUM_STAIRS_SWITCH3, HIGH);
+
     ShiftPWM.SetAmountOfRegisters(numRegisters);
-    ShiftPWM.Start(pwmFrequency,maxBrightness);  
+    ShiftPWM.Start(pwmFrequency,255);  
     // Print information about the interrupt frequency, duration and load on your program
     ShiftPWM.SetAll(0);
     ShiftPWM.PrintInterruptLoad();
@@ -76,7 +87,22 @@ void setup()   {
 }
 void loop()
 {    
-    /* Detect rising edge with polling. Interrupts crash the program. */
+//    Serial.print("port ");
+//    Serial.print((uint16_t)port_to_output_PGM_ct[digital_pin_to_port_PGM_ct[NUM_STAIRS_SWITCH1]]);
+//    Serial.print(" pin ");
+//    Serial.println(digital_pin_to_bit_PGM_ct[NUM_STAIRS_SWITCH1]);
+//
+//    Serial.print("port ");
+//    Serial.print((uint16_t)&PORTD);
+//    Serial.println(" pin 5 Expected");
+
+     Serial.print(digitalRead(NUM_STAIRS_SWITCH3));
+     Serial.print(digitalRead(NUM_STAIRS_SWITCH2));
+     Serial.print(digitalRead(NUM_STAIRS_SWITCH1));
+     Serial.println((PIND & (1 << 5)) >> 5);
+     delay(100); 
+
+     /* Detect rising edge with polling. Interrupts crash the program. */
     unsigned char pinRead = digitalRead(MOTION_SENSOR_TOP_PIN);
     if(pinRead == HIGH && lastReadTopPin == LOW){
         topActivated = true;
@@ -115,6 +141,6 @@ void loop()
     Returns true if switch is in "1" position. 
 */
 boolean switchPressed(){
-    return !digitalRead(SWITCH_PIN);
+    return (!digitalRead(SWITCH0_PIN)) || (!digitalRead(SWITCH1_PIN));
 }
 

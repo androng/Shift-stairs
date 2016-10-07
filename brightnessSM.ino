@@ -67,7 +67,7 @@ void brightnessSM(){
     case sOverrideSwitch:
         break;
     }
-    
+//    Serial.print("state: "); Serial.println(brightnessState);
     /* Transitions */
     switch(brightnessState){
     case sFullyOn:
