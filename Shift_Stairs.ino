@@ -11,6 +11,8 @@ const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be
 
 #include <ShiftPWM.h>   // include ShiftPWM.h after setting the pins!
 
+const uint8_t MAX_LEDs = 16;
+
 const int SWITCH0_PIN = 0;
 const int SWITCH1_PIN = 1;
 const int PHOTORESISTOR_PIN = A5;
@@ -24,10 +26,13 @@ const int NUM_STAIRS_SWITCH1 = 6;
 const unsigned char maxBrightness = 255;
 const unsigned char pwmFrequency = 75;
 const int numRegisters = 2;
-const int NUMLEDs = 9;
 const int MOTION_SENSOR_WARMUP_TIME = 10;
 const int ON_TIME = 10000; /* The duration between turn on and turn off. */
 const int LIGHT_THRESHOLD = 300; /* Anything below this sensor value will enable lights */
+
+/* Parameters set by the PCB switches and pots on startup */
+int numLEDs = 9;
+
 
 /* These are used to detect rising edges in the absence of interrupts. 
    Using interrupts with ShiftPWM crashes the program. */
@@ -48,7 +53,7 @@ const unsigned long BRIGHTNESS_SM_PERIOD = 2000; /* in μs */
 unsigned long lastBrightnessSM = 0;
 
 /* LED 0 is on the top of stairs */
-unsigned char brightnesses[NUMLEDs] = {0};
+unsigned char brightnesses[MAX_LEDs] = {0};
 
 void setup()   {                
     pinMode(ShiftPWM_latchPin, OUTPUT);  
@@ -69,6 +74,13 @@ void setup()   {
     digitalWrite(NUM_STAIRS_SWITCH2, HIGH);
     digitalWrite(NUM_STAIRS_SWITCH3, HIGH);
 
+    delay(1);
+    /* Read the PCB hardware and configure parameters */
+    numLEDs = readHexSwitch();
+    if(numLEDs == 0){
+        numLEDs = MAX_LEDs;  
+    }
+    
     ShiftPWM.SetAmountOfRegisters(numRegisters);
     ShiftPWM.Start(pwmFrequency,255);  
     // Print information about the interrupt frequency, duration and load on your program
@@ -95,12 +107,8 @@ void loop()
 //    Serial.print("port ");
 //    Serial.print((uint16_t)&PORTD);
 //    Serial.println(" pin 5 Expected");
-
-     Serial.print(digitalRead(NUM_STAIRS_SWITCH3));
-     Serial.print(digitalRead(NUM_STAIRS_SWITCH2));
-     Serial.print(digitalRead(NUM_STAIRS_SWITCH1));
-     Serial.println((PIND & (1 << 5)) >> 5);
-     delay(100); 
+    
+    Serial.println(readHexSwitch(), BIN);
 
      /* Detect rising edge with polling. Interrupts crash the program. */
     unsigned char pinRead = digitalRead(MOTION_SENSOR_TOP_PIN);
@@ -143,4 +151,13 @@ void loop()
 boolean switchPressed(){
     return (!digitalRead(SWITCH0_PIN)) || (!digitalRead(SWITCH1_PIN));
 }
-
+/** Reads the 17-position switch */
+uint8_t readHexSwitch(){
+    uint8_t switchPosition = 0;
+    switchPosition |= (!digitalRead(NUM_STAIRS_SWITCH3)) << 3;
+    switchPosition |= (!digitalRead(NUM_STAIRS_SWITCH2)) << 2;
+    switchPosition |= (!digitalRead(NUM_STAIRS_SWITCH1)) << 1;
+    switchPosition |= (!(PIND & (1 << 5)));
+    
+    return switchPosition;
+}

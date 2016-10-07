@@ -16,10 +16,10 @@ void brightnessSM(){
     case sOff:
         break;
     case sTurningOn:{
-        /* Increase brightness of lights. This for loop goes from -NUMLEDs to 0 or 
-           0 to NUMLEDs depending on the direction of propegration. */
-        char startLight = -1 * (directionTriggered - 1) * (NUMLEDs - 1);
-        char endLight   = -1 * (directionTriggered - 2) * (NUMLEDs - 1);
+        /* Increase brightness of lights. This for loop goes from -numLEDs to 0 or 
+           0 to numLEDs depending on the direction of propegration. */
+        char startLight = -1 * (directionTriggered - 1) * (numLEDs - 1);
+        char endLight   = -1 * (directionTriggered - 2) * (numLEDs - 1);
         for(char l = startLight; l <= endLight; l++){
             
             /* Turn on the next LED only if the ones before it 
@@ -41,10 +41,10 @@ void brightnessSM(){
         break;
     }
     case sTurningOff:{
-        /* Decrease brightness of lights. This for loop goes from -NUMLEDs to 0 or 
-           0 to NUMLEDs depending on the direction of propegration. */
-        char startLight = -1 * (directionTriggered - 1) * (NUMLEDs - 1);
-        char endLight   = -1 * (directionTriggered - 2) * (NUMLEDs - 1);
+        /* Decrease brightness of lights. This for loop goes from -numLEDs to 0 or 
+           0 to numLEDs depending on the direction of propegration. */
+        char startLight = -1 * (directionTriggered - 1) * (numLEDs - 1);
+        char endLight   = -1 * (directionTriggered - 2) * (numLEDs - 1);
         for(char l = startLight; l <= endLight; l++){
             /* Turn on the next LED only if the ones before it 
                are on*/
@@ -94,7 +94,7 @@ void brightnessSM(){
     case sTurningOn:{
         /* If all the lights are on then proceed */
         unsigned char allOn = true;
-        for(unsigned char l = 0; l < NUMLEDs; l++){
+        for(unsigned char l = 0; l < numLEDs; l++){
             if(brightnesses[l] != maxBrightness){
                 allOn = false;
                 break;
@@ -111,7 +111,7 @@ void brightnessSM(){
     case sTurningOff:{
         /* If all the lights are off then proceed */
         unsigned char allOff = true;
-        for(unsigned char l = 0; l < NUMLEDs; l++){
+        for(unsigned char l = 0; l < numLEDs; l++){
             if(brightnesses[l] != 0){
                 allOff = false;
                 break;
@@ -129,7 +129,7 @@ void brightnessSM(){
     case sOverrideSwitch:
         if(switchPressed() == false){
             /* Switch all LEDs off */
-            for(char l = 0; l < NUMLEDs; l++){
+            for(char l = 0; l < numLEDs; l++){
                 ShiftPWM.SetOne(l, 0);
                 brightnesses[l] = 0;
             }
@@ -142,7 +142,7 @@ void brightnessSM(){
 void transitionToOverrideSwitch(){
     brightnessState = sOverrideSwitch;
     /* Switch all LEDs on */
-    for(unsigned char l = 0; l < NUMLEDs; l++){
+    for(unsigned char l = 0; l < numLEDs; l++){
         ShiftPWM.SetOne(l, maxBrightness);
         brightnesses[l] = maxBrightness;
     }        
