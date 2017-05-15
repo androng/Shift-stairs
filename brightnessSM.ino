@@ -14,6 +14,13 @@ void brightnessSM(){
     case sFullyOn:
         break;
     case sOff:
+        /* End steps logic */
+        if(digitalRead(END_STEPS_ALWAYS_ON_SWITCH) && analogRead(PHOTORESISTOR_PIN) < LIGHT_THRESHOLD){
+            // TODO: Add logic 
+            /* Put first and last steps at half MAX_BRIGHTNESS */
+            
+        } 
+            
         break;
     case sTurningOn:{
         /* Increase brightness of lights. This for loop goes from -numLEDs to 0 or 

@@ -15,7 +15,11 @@ const uint8_t MAX_LEDs = 16;
 
 const int SWITCH0_PIN = 0;
 const int SWITCH1_PIN = 1;
-const int PHOTORESISTOR_PIN = A5;
+const int END_STEPS_ALWAYS_ON_SWITCH = 11;
+const int PHOTORESISTOR_PIN = 5;
+const int POTENTIOMETER_PIN_FADE_SPEED = 2;
+const int POTENTIOMETER_PIN_MAX_BRIGHTNESS = 4;
+const int POTENTIOMETER_PIN_PROPEGATE_SPEED = 3;
 const int MOTION_SENSOR_TOP_PIN = 5;
 const int MOTION_SENSOR_BOTTOM_PIN = 13;
 const int NUM_STAIRS_SWITCH2 = 4;
@@ -52,6 +56,9 @@ char directionTriggered = 0;
 const unsigned long BRIGHTNESS_SM_PERIOD = 2000; /* in μs */
 unsigned long lastBrightnessSM = 0;
 
+const unsigned long CHECK_DIALS_PERIOD = 500; 
+unsigned long lastCheckDials = 0;
+
 /* LED 0 is on the top of stairs */
 unsigned char brightnesses[MAX_LEDs] = {0};
 
@@ -73,7 +80,8 @@ void setup()   {
     digitalWrite(NUM_STAIRS_SWITCH1, HIGH);
     digitalWrite(NUM_STAIRS_SWITCH2, HIGH);
     digitalWrite(NUM_STAIRS_SWITCH3, HIGH);
-
+    digitalWrite(END_STEPS_ALWAYS_ON_SWITCH, HIGH);
+    
     delay(1);
     /* Read the PCB hardware and configure parameters */
     numLEDs = readHexSwitch();
@@ -108,8 +116,7 @@ void loop()
 //    Serial.print((uint16_t)&PORTD);
 //    Serial.println(" pin 5 Expected");
     
-    Serial.println(readHexSwitch(), BIN);
-
+    
      /* Detect rising edge with polling. Interrupts crash the program. */
     unsigned char pinRead = digitalRead(MOTION_SENSOR_TOP_PIN);
     if(pinRead == HIGH && lastReadTopPin == LOW){
@@ -144,12 +151,19 @@ void loop()
         brightnessSM();
         lastBrightnessSM = micros();
     }
+    
+    if(millis() - lastCheckDials > CHECK_DIALS_PERIOD){
+        Serial.println(dialsChanged());
+        lastCheckDials = millis();
+    }
+    
+    
 }
 /** 
-    Returns true if switch is in "1" position. 
+    Returns true if switchs are in different positions. 
 */
 boolean switchPressed(){
-    return (!digitalRead(SWITCH0_PIN)) || (!digitalRead(SWITCH1_PIN));
+    return (digitalRead(SWITCH0_PIN) ^ digitalRead(SWITCH1_PIN));
 }
 /** Reads the 17-position switch */
 uint8_t readHexSwitch(){
@@ -160,4 +174,36 @@ uint8_t readHexSwitch(){
     switchPosition |= (!(PIND & (1 << 5)));
     
     return switchPosition;
+}
+/* Returns true if the positions of the dials are different from what they were
+   at the last call of this function */
+boolean dialsChanged(){
+    static int lastDial1Value = analogRead(POTENTIOMETER_PIN_FADE_SPEED);
+    static int lastDial2Value = analogRead(POTENTIOMETER_PIN_MAX_BRIGHTNESS);
+    static int lastDial3Value = analogRead(POTENTIOMETER_PIN_PROPEGATE_SPEED);
+    const int CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS = 20;
+    
+
+    int newDial1Value = analogRead(POTENTIOMETER_PIN_FADE_SPEED);
+    int newDial2Value = analogRead(POTENTIOMETER_PIN_MAX_BRIGHTNESS);
+    int newDial3Value = analogRead(POTENTIOMETER_PIN_PROPEGATE_SPEED);
+
+    boolean dialsHaveChanged = false; 
+    
+    if(newDial1Value - lastDial1Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
+        newDial1Value - lastDial1Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
+        newDial2Value - lastDial2Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
+        newDial2Value - lastDial2Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
+        newDial3Value - lastDial3Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
+        newDial3Value - lastDial3Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS){
+        
+        dialsHaveChanged = true;      
+    }
+    
+    
+    lastDial1Value = newDial1Value;
+    lastDial2Value = newDial2Value;
+    lastDial3Value = newDial3Value;
+
+    return dialsHaveChanged;
 }
