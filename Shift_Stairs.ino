@@ -153,10 +153,15 @@ void loop()
     }
     
     if(millis() - lastCheckDials > CHECK_DIALS_PERIOD){
-        Serial.println(dialsChanged());
-        lastCheckDials = millis();
+//        Serial.println(dialsChanged());
+        if(dialsChanged() != 0){
+            generateLEDTurnOnTimesAndDurations(BOTTOM_TO_TOP);
+//            Serial.println("run");
+        }
+        
+        lastCheckDials = millis();        
     }
-    
+
     
 }
 /** 
@@ -175,20 +180,21 @@ uint8_t readHexSwitch(){
     
     return switchPosition;
 }
+
+int lastDial1Value = analogRead(POTENTIOMETER_PIN_FADE_SPEED);
+int lastDial2Value = analogRead(POTENTIOMETER_PIN_MAX_BRIGHTNESS);
+int lastDial3Value = analogRead(POTENTIOMETER_PIN_PROPEGATE_SPEED);
+
 /* Returns true if the positions of the dials are different from what they were
    at the last call of this function */
-boolean dialsChanged(){
-    static int lastDial1Value = analogRead(POTENTIOMETER_PIN_FADE_SPEED);
-    static int lastDial2Value = analogRead(POTENTIOMETER_PIN_MAX_BRIGHTNESS);
-    static int lastDial3Value = analogRead(POTENTIOMETER_PIN_PROPEGATE_SPEED);
+uint8_t dialsChanged(){
     const int CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS = 20;
     
-
     int newDial1Value = analogRead(POTENTIOMETER_PIN_FADE_SPEED);
     int newDial2Value = analogRead(POTENTIOMETER_PIN_MAX_BRIGHTNESS);
     int newDial3Value = analogRead(POTENTIOMETER_PIN_PROPEGATE_SPEED);
 
-    boolean dialsHaveChanged = false; 
+    boolean dialsHaveChanged = 0; 
     
     if(newDial1Value - lastDial1Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
         newDial1Value - lastDial1Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
@@ -197,7 +203,7 @@ boolean dialsChanged(){
         newDial3Value - lastDial3Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
         newDial3Value - lastDial3Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS){
         
-        dialsHaveChanged = true;      
+        dialsHaveChanged = 1;      
     }
     
     

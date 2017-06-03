@@ -13,7 +13,7 @@
         disp([num2str(round(ans(i))),','])
     end
 */
-unsigned char expoDutyCycles[256] = {
+const unsigned char EXPONENTIAL_DUTY_CYCLES[256] = {
 0,
 0,
 0,
