@@ -13,6 +13,8 @@ const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be
 
 const uint8_t MAX_LEDs = 16;
 
+const long MAX_ADC_VALUE = 1023;
+
 const int SWITCH0_PIN = 0;
 const int SWITCH1_PIN = 1;
 const int END_STEPS_ALWAYS_ON_SWITCH = 11;
@@ -26,7 +28,8 @@ const int NUM_STAIRS_SWITCH2 = 4;
 /******** NUM_STAIRS_SWITCH0 =  NOT MAPPED in digitalWrite */
 const int NUM_STAIRS_SWITCH3 = 12;
 const int NUM_STAIRS_SWITCH1 = 6;
-
+const unsigned long MAX_FADE_DURATION_MILLISEC = 3000;
+        
 const unsigned char maxBrightness = 255;
 const unsigned char pwmFrequency = 75;
 const int numRegisters = 2;
@@ -60,7 +63,7 @@ const unsigned long CHECK_DIALS_PERIOD = 500;
 unsigned long lastCheckDials = 0;
 
 /* LED 0 is on the top of stairs */
-unsigned char brightnesses[MAX_LEDs] = {0};
+unsigned long stairsTurnOnTimes[MAX_LEDs] = {0};
 
 void setup()   {                
     pinMode(ShiftPWM_latchPin, OUTPUT);  
@@ -153,11 +156,9 @@ void loop()
     }
     
     if(millis() - lastCheckDials > CHECK_DIALS_PERIOD){
-//        Serial.println(dialsChanged());
         if(dialsChanged() != 0){
-            generateLEDTurnOnTimesAndDurations(BOTTOM_TO_TOP);
-//            Serial.println("run");
-        }
+
+       }
         
         lastCheckDials = millis();        
     }
