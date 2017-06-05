@@ -10,7 +10,7 @@ int brightnessState = sOff;
 
 void brightnessSM(){
     const uint16_t FADE_DURATION = lastDial1Value * MAX_FADE_DURATION_MILLISEC / MAX_ADC_VALUE;
-    const uint8_t MAX_BRIGHTNESS = lastDial2Value >> 2; /* 1023 >> 2 = 255 */
+    const uint8_t MAX_BRIGHTNESS = EXPONENTIAL_DUTY_CYCLES[lastDial2Value >> 2]; /* 1023 >> 2 = 255 */
         
     /* Actions */
     switch(brightnessState){
@@ -18,6 +18,8 @@ void brightnessSM(){
         for(char l = 0; l < numLEDs; l++){
             ShiftPWM.SetOne(l, MAX_BRIGHTNESS);
         }
+        
+        
         break;
     case sOff:
         /* End steps logic */
@@ -63,8 +65,8 @@ void brightnessSM(){
             else {
                 /* Set to an in-between brightness */
                 stepBrightness = (CURRENT_TIME - stairsTurnOnTimes[l]) * MAX_BRIGHTNESS /FADE_DURATION;
-                Serial.print("stpb: ");
-                Serial.println(CURRENT_TIME - stairsTurnOnTimes[l]);
+                Serial.print("fade: ");
+                Serial.println(FADE_DURATION);
             
                 if(brightnessState == sTurningOff) {
                     stepBrightness = MAX_BRIGHTNESS - stepBrightness;
@@ -90,11 +92,13 @@ void brightnessSM(){
         if(switchPressed()){
             brightnessState = sOverrideSwitch;
         }
+        
         break;
     case sOff:
         if(directionTriggered != 0){
             if(analogRead(PHOTORESISTOR_PIN) < LIGHT_THRESHOLD){
                 generateLEDTurnOnTimesAndDurations();
+                dialsChangedSoRestartAnimation = 0;
                 brightnessState = sTurningOn;
             } 
             else {
@@ -142,6 +146,8 @@ void brightnessSM(){
         if(switchPressed()){
             brightnessState = sOverrideSwitch;
         }
+        
+        
         break;
     }
     case sOverrideSwitch:
@@ -157,10 +163,25 @@ void brightnessSM(){
             
             /* Switch all LEDs on */
             for(unsigned char l = 0; l < numLEDs; l++){
-                ShiftPWM.SetOne(l, maxBrightness);
+                ShiftPWM.SetOne(l, MAX_BRIGHTNESS);
             }    
         }
         break;
     }
+    /* Applies to ALL states*/
+    checkForDialsChanged();
 }
 
+void checkForDialsChanged(){
+    if(dialsChangedSoRestartAnimation){
+        directionTriggered = TOP_TO_BOTTOM;
+        generateLEDTurnOnTimesAndDurations();
+        brightnessState = sTurningOn;
+        dialsChangedSoRestartAnimation = 0;
+        
+        /* Make the delay before turning off slighly less than normal  */
+        lastMotionTime = millis() - ON_TIME/2;
+    }
+
+        
+}

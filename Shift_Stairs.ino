@@ -2,7 +2,7 @@
 #include <math.h>
 #include <SPI.h>
 //#include <MemoryFree.h> 
-//#include "expoDutyCycles.h"
+#include "expoDutyCycles.h"
 
 //Data pin is MOSI (atmega168/328: pin 11. Mega: 51) 
 //Clock pin is SCK (atmega168/328: pin 13. Mega: 52)
@@ -30,8 +30,8 @@ const int NUM_STAIRS_SWITCH3 = 12;
 const int NUM_STAIRS_SWITCH1 = 6;
 const unsigned long MAX_FADE_DURATION_MILLISEC = 3000;
         
-const unsigned char maxBrightness = 255;
-const unsigned char pwmFrequency = 75;
+const unsigned char HIGHEST_POSSIBLE_BRIGHTNESS = 255;
+const unsigned char SHIFTPWM_PWMFREQUENCY = 75;
 const int numRegisters = 2;
 const int MOTION_SENSOR_WARMUP_TIME = 10;
 const int ON_TIME = 10000; /* The duration between turn on and turn off. */
@@ -59,11 +59,14 @@ char directionTriggered = 0;
 const unsigned long BRIGHTNESS_SM_PERIOD = 2000; /* in μs */
 unsigned long lastBrightnessSM = 0;
 
-const unsigned long CHECK_DIALS_PERIOD = 500; 
+const unsigned long CHECK_DIALS_PERIOD = 50; 
 unsigned long lastCheckDials = 0;
 
 /* LED 0 is on the top of stairs */
 unsigned long stairsTurnOnTimes[MAX_LEDs] = {0};
+
+/* Flag for when a switch or dial is moved */
+uint8_t dialsChangedSoRestartAnimation = 0;
 
 void setup()   {                
     pinMode(ShiftPWM_latchPin, OUTPUT);  
@@ -93,17 +96,17 @@ void setup()   {
     }
     
     ShiftPWM.SetAmountOfRegisters(numRegisters);
-    ShiftPWM.Start(pwmFrequency,255);  
+    ShiftPWM.Start(SHIFTPWM_PWMFREQUENCY,255);  
     // Print information about the interrupt frequency, duration and load on your program
     ShiftPWM.SetAll(0);
     ShiftPWM.PrintInterruptLoad();
     // Fade in all outputs
-    for(int j=0;j<maxBrightness;j++){
+    for(int j=0;j<HIGHEST_POSSIBLE_BRIGHTNESS;j++){
         ShiftPWM.SetAll(j);  
         delay(3);
     }
     // Fade out all outputs
-    for(int j=maxBrightness;j>=0;j--){
+    for(int j=HIGHEST_POSSIBLE_BRIGHTNESS;j>=0;j--){
         ShiftPWM.SetAll(j);  
         delay(3);
     }
@@ -156,9 +159,9 @@ void loop()
     }
     
     if(millis() - lastCheckDials > CHECK_DIALS_PERIOD){
-        if(dialsChanged() != 0){
-
-       }
+        if(speedDialsChanged() != 0){
+            dialsChangedSoRestartAnimation = 1;
+        }
         
         lastCheckDials = millis();        
     }
@@ -186,10 +189,12 @@ int lastDial1Value = analogRead(POTENTIOMETER_PIN_FADE_SPEED);
 int lastDial2Value = analogRead(POTENTIOMETER_PIN_MAX_BRIGHTNESS);
 int lastDial3Value = analogRead(POTENTIOMETER_PIN_PROPEGATE_SPEED);
 
-/* Returns true if the positions of the dials are different from what they were
-   at the last call of this function */
-uint8_t dialsChanged(){
-    const int CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS = 20;
+/* Returns true if the positions of the SPEED dials are different from what they were
+   at the last call of this function. 
+   Also saves the values of all three dials. 
+ */
+uint8_t speedDialsChanged(){
+    const int CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS = 15;
     
     int newDial1Value = analogRead(POTENTIOMETER_PIN_FADE_SPEED);
     int newDial2Value = analogRead(POTENTIOMETER_PIN_MAX_BRIGHTNESS);
@@ -199,8 +204,8 @@ uint8_t dialsChanged(){
     
     if(newDial1Value - lastDial1Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
         newDial1Value - lastDial1Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
-        newDial2Value - lastDial2Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
-        newDial2Value - lastDial2Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
+//        newDial2Value - lastDial2Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||      //This is commented because I did not want
+//        newDial2Value - lastDial2Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||     //the brightness dial to restart the stairs animation
         newDial3Value - lastDial3Value >= CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS ||
         newDial3Value - lastDial3Value <= -CHANGE_BY_AT_LEAST_THIS_MANY_ADC_UNITS){
         
