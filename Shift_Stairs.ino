@@ -50,8 +50,8 @@ volatile unsigned char topActivated = false;
 volatile unsigned char bottomActivated = false; 
 unsigned long lastMotionTime = 0; 
 
-const char BOTTOM_TO_TOP = 1;
-const char TOP_TO_BOTTOM = 2;
+const char TOP_TO_BOTTOM = 1;
+const char BOTTOM_TO_TOP = 2;
 /* For sake of the animation, stores the direction of propegation.
    Set when animation is active, cleared when animation is done.  */
 char directionTriggered = 0; 
@@ -61,6 +61,9 @@ unsigned long lastBrightnessSM = 0;
 
 const unsigned long CHECK_DIALS_PERIOD = 50; 
 unsigned long lastCheckDials = 0;
+
+const unsigned long CHECK_NUM_STEPS_PERIOD = 100; 
+unsigned long lastCheckNumSteps = 0;
 
 /* LED 0 is on the top of stairs */
 unsigned long stairsTurnOnTimes[MAX_LEDs] = {0};
@@ -79,7 +82,9 @@ void setup()   {
     Serial.begin(9600);
     
    
-    /* Turn on pullup resistor for switch */
+    /* Turn on pullup resistors */
+    digitalWrite(MOTION_SENSOR_TOP_PIN, HIGH);
+    digitalWrite(MOTION_SENSOR_BOTTOM_PIN, HIGH);
     digitalWrite(SWITCH0_PIN, HIGH);
     digitalWrite(SWITCH1_PIN, HIGH);
     PORTD |= (1<<5); /* stupid digitalWrite doesn't have this pin mapped */
@@ -94,12 +99,15 @@ void setup()   {
     if(numLEDs == 0){
         numLEDs = MAX_LEDs;  
     }
+    speedDialsChanged();
     
     ShiftPWM.SetAmountOfRegisters(numRegisters);
     ShiftPWM.Start(SHIFTPWM_PWMFREQUENCY,255);  
     // Print information about the interrupt frequency, duration and load on your program
     ShiftPWM.SetAll(0);
     ShiftPWM.PrintInterruptLoad();
+    
+    
     // Fade in all outputs
     for(int j=0;j<HIGHEST_POSSIBLE_BRIGHTNESS;j++){
         ShiftPWM.SetAll(j);  
@@ -123,15 +131,15 @@ void loop()
 //    Serial.println(" pin 5 Expected");
     
     
-     /* Detect rising edge with polling. Interrupts crash the program. */
+     /* Detect falling edge with polling. Interrupts crash the program. */
     unsigned char pinRead = digitalRead(MOTION_SENSOR_TOP_PIN);
-    if(pinRead == HIGH && lastReadTopPin == LOW){
+    if(pinRead == LOW && lastReadTopPin == HIGH){
         topActivated = true;
     }
     lastReadTopPin = pinRead;
     /* Detect rising edge with polling. Interrupts crash the program. */
     pinRead = digitalRead(MOTION_SENSOR_BOTTOM_PIN);
-    if(pinRead == HIGH && lastReadBotPin == LOW){
+    if(pinRead == LOW && lastReadBotPin == HIGH){
         bottomActivated = true;
     }
     lastReadBotPin = pinRead;
@@ -166,7 +174,14 @@ void loop()
         lastCheckDials = millis();        
     }
 
-    
+    if(millis() - lastCheckNumSteps > CHECK_NUM_STEPS_PERIOD){
+        numLEDs = readHexSwitch();
+        if(numLEDs == 0){
+            numLEDs = MAX_LEDs;  
+        }
+        
+        lastCheckNumSteps = millis();        
+    }    
 }
 /** 
     Returns true if switchs are in different positions. 
@@ -218,4 +233,8 @@ uint8_t speedDialsChanged(){
     lastDial3Value = newDial3Value;
 
     return dialsHaveChanged;
+}
+
+uint8_t endStepsAlwaysOnSwitchedOn(){
+    return !digitalRead(END_STEPS_ALWAYS_ON_SWITCH);
 }

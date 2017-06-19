@@ -10,8 +10,11 @@ int brightnessState = sOff;
 
 void brightnessSM(){
     const uint16_t FADE_DURATION = lastDial1Value * MAX_FADE_DURATION_MILLISEC / MAX_ADC_VALUE;
-    const uint8_t MAX_BRIGHTNESS = EXPONENTIAL_DUTY_CYCLES[lastDial2Value >> 2]; /* 1023 >> 2 = 255 */
-        
+    const uint8_t MAX_BRIGHTNESS = EXPONENTIAL_DUTY_CYCLES[(MAX_ADC_VALUE - lastDial2Value) >> 2]; /* 1023 >> 2 = 255 */
+    /* Put first and last steps at half MAX_BRIGHTNESS */
+    const uint8_t DIM_BRIGHTNESS = MAX_BRIGHTNESS/16; //For the end steps when the "end steps always on" setting enabled
+    const uint8_t MINIMUM_BRIGHTNESS = 1;
+                
     /* Actions */
     switch(brightnessState){
     case sFullyOn:
@@ -22,16 +25,26 @@ void brightnessSM(){
         
         break;
     case sOff:
+        
         /* End steps logic */
-        if(digitalRead(END_STEPS_ALWAYS_ON_SWITCH) && analogRead(PHOTORESISTOR_PIN) < LIGHT_THRESHOLD){
-            // TODO: Add logic 
-            /* Put first and last steps at half MAX_BRIGHTNESS */
+        if(endStepsAlwaysOnSwitchedOn() && analogRead(PHOTORESISTOR_PIN) < LIGHT_THRESHOLD){
             
-        } 
+            /* End step */
+            ShiftPWM.SetOne(0, max(MINIMUM_BRIGHTNESS, DIM_BRIGHTNESS));
+            /* Inbetween steps */
+            for(char l = 1; l < numLEDs - 1; l++){
+                ShiftPWM.SetOne(l, 0);
+            }
+            /* End step */
+            ShiftPWM.SetOne(numLEDs-1, max(MINIMUM_BRIGHTNESS, DIM_BRIGHTNESS));
             
-        for(char l = 0; l < numLEDs; l++){
-            ShiftPWM.SetOne(l, 0);
+        }  
+        else {
+            for(char l = 0; l < numLEDs; l++){
+                ShiftPWM.SetOne(l, 0);
+            }
         }
+            
         
         break;
     case sTurningOn:
@@ -51,12 +64,22 @@ void brightnessSM(){
                 
                 if(brightnessState == sTurningOff) {
                     stepBrightness = 0;
+                    
+                    /* If "end steps always on" enabled AND (first or last step) */
+                    if(endStepsAlwaysOnSwitchedOn() && (l == 0 || l == numLEDs - 1)){
+                        stepBrightness = max(MINIMUM_BRIGHTNESS, DIM_BRIGHTNESS);
+                    }
                 }
             }
             /* If fading is for the future */
             else if(CURRENT_TIME < stairsTurnOnTimes[l] ){
                 /* Set to zero brightess */
                 stepBrightness = 0;
+
+                /* If "end steps always on" enabled AND (first or last step) */
+                if(endStepsAlwaysOnSwitchedOn() && (l == 0 || l == numLEDs - 1)){
+                    stepBrightness = max(MINIMUM_BRIGHTNESS, DIM_BRIGHTNESS);
+                }
                 
                 if(brightnessState == sTurningOff) {
                     stepBrightness = MAX_BRIGHTNESS;
@@ -65,11 +88,23 @@ void brightnessSM(){
             else {
                 /* Set to an in-between brightness */
                 stepBrightness = (CURRENT_TIME - stairsTurnOnTimes[l]) * MAX_BRIGHTNESS /FADE_DURATION;
-                Serial.print("fade: ");
-                Serial.println(FADE_DURATION);
+            
+                /* If "end steps always on" enabled AND (first or last step) */
+                if(endStepsAlwaysOnSwitchedOn() && (l == 0 || l == numLEDs - 1)){
+                    stepBrightness = max(stepBrightness, DIM_BRIGHTNESS);
+                    stepBrightness = max(stepBrightness, MINIMUM_BRIGHTNESS);
+                }
+
             
                 if(brightnessState == sTurningOff) {
                     stepBrightness = MAX_BRIGHTNESS - stepBrightness;
+                    
+                    /* If "end steps always on" enabled AND (first or last step) */
+                    if(endStepsAlwaysOnSwitchedOn() && (l == 0 || l == numLEDs - 1)){
+                        stepBrightness = max(stepBrightness, DIM_BRIGHTNESS);
+                        stepBrightness = max(stepBrightness, MINIMUM_BRIGHTNESS);
+                    }
+
                 }
             }
             ShiftPWM.SetOne(l, stepBrightness);
@@ -81,7 +116,7 @@ void brightnessSM(){
     case sOverrideSwitch:
         break;
     }
-    Serial.print("state: "); Serial.println(brightnessState);
+//    Serial.print("state: "); Serial.println(brightnessState);
     /* Transitions */
     switch(brightnessState){
     case sFullyOn:
