@@ -83,8 +83,8 @@ void setup()   {
     
    
     /* Turn on pullup resistors */
-    digitalWrite(MOTION_SENSOR_TOP_PIN, HIGH);
-    digitalWrite(MOTION_SENSOR_BOTTOM_PIN, HIGH);
+//    digitalWrite(MOTION_SENSOR_TOP_PIN, HIGH);
+//    digitalWrite(MOTION_SENSOR_BOTTOM_PIN, HIGH);
     digitalWrite(SWITCH0_PIN, HIGH);
     digitalWrite(SWITCH1_PIN, HIGH);
     PORTD |= (1<<5); /* stupid digitalWrite doesn't have this pin mapped */
@@ -133,13 +133,13 @@ void loop()
     
      /* Detect falling edge with polling. Interrupts crash the program. */
     unsigned char pinRead = digitalRead(MOTION_SENSOR_TOP_PIN);
-    if(pinRead == LOW && lastReadTopPin == HIGH){
+    if(pinRead == HIGH && lastReadTopPin == LOW){
         topActivated = true;
     }
     lastReadTopPin = pinRead;
     /* Detect rising edge with polling. Interrupts crash the program. */
     pinRead = digitalRead(MOTION_SENSOR_BOTTOM_PIN);
-    if(pinRead == LOW && lastReadBotPin == HIGH){
+    if(pinRead == HIGH && lastReadBotPin == LOW){
         bottomActivated = true;
     }
     lastReadBotPin = pinRead;
