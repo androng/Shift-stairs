@@ -83,8 +83,8 @@ void setup()   {
     
    
     /* Turn on pullup resistors */
-//    digitalWrite(MOTION_SENSOR_TOP_PIN, HIGH);
-//    digitalWrite(MOTION_SENSOR_BOTTOM_PIN, HIGH);
+    digitalWrite(MOTION_SENSOR_TOP_PIN, HIGH);
+    digitalWrite(MOTION_SENSOR_BOTTOM_PIN, HIGH);
     digitalWrite(SWITCH0_PIN, HIGH);
     digitalWrite(SWITCH1_PIN, HIGH);
     PORTD |= (1<<5); /* stupid digitalWrite doesn't have this pin mapped */
