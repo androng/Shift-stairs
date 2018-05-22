@@ -133,13 +133,13 @@ void loop()
     
      /* Detect falling edge with polling. Interrupts crash the program. */
     unsigned char pinRead = digitalRead(MOTION_SENSOR_TOP_PIN);
-    if(pinRead == HIGH && lastReadTopPin == LOW){
+    if(lastReadTopPin == HIGH && pinRead == LOW){
         topActivated = true;
     }
     lastReadTopPin = pinRead;
     /* Detect rising edge with polling. Interrupts crash the program. */
     pinRead = digitalRead(MOTION_SENSOR_BOTTOM_PIN);
-    if(pinRead == HIGH && lastReadBotPin == LOW){
+    if(lastReadBotPin == HIGH && pinRead == LOW){
         bottomActivated = true;
     }
     lastReadBotPin = pinRead;
