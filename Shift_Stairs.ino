@@ -23,7 +23,7 @@ const int POTENTIOMETER_PIN_FADE_SPEED = 2;
 const int POTENTIOMETER_PIN_MAX_BRIGHTNESS = 4;
 const int POTENTIOMETER_PIN_PROPEGATE_SPEED = 3;
 const int MOTION_SENSOR_TOP_PIN = 5;
-const int MOTION_SENSOR_BOTTOM_PIN = 13;
+const int MOTION_SENSOR_BOTTOM_PIN = 10;
 const int NUM_STAIRS_SWITCH2 = 4;
 /******** NUM_STAIRS_SWITCH0 =  NOT MAPPED in digitalWrite */
 const int NUM_STAIRS_SWITCH3 = 12;
@@ -34,7 +34,7 @@ const unsigned char HIGHEST_POSSIBLE_BRIGHTNESS = 255;
 const unsigned char SHIFTPWM_PWMFREQUENCY = 75;
 const int numRegisters = 2;
 const int MOTION_SENSOR_WARMUP_TIME = 10;
-const int ON_TIME = 10000; /* The duration between turn on and turn off. */
+const int ON_TIME = 20000; /* The duration between turn on and turn off. */
 const int LIGHT_THRESHOLD = 300; /* Anything below this sensor value will enable lights */
 
 /* Parameters set by the PCB switches and pots on startup */
